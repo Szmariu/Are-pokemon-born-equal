@@ -4,3 +4,6 @@
 *.Rproj
 *.RData
 *.RHistory
+markdown_cache/
+markdown_files/
+
