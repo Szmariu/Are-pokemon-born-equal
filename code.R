@@ -219,6 +219,11 @@ ggplot(as.data.frame(poke.mds.1.center)) + geom_point(aes(x = V1, y = V2, colour
 poke.km.pca <- KMeans_rcpp(poke.pca.2$scores[, 1:2], clusters=4, num_init=30, max_iters = 10000) 
 ggplot(as.data.frame(poke.pca.2$scores[, 1:2])) + geom_point(aes(x = Comp.1, y = Comp.2, colour = poke.km.pca$clusters)) + scale_colour_gradientn(colours=wes_palette(n=3, name="BottleRocket2"))
 
+
+x1 <- ggplot(as.data.frame(poke.mds.1.center)) + geom_point(aes(x = V1, y = V2, colour = poke.km$clusters)) + scale_colour_gradientn(colours=wes_palette(n=3, name="BottleRocket2"))
+x2 <- ggplot(as.data.frame(poke.pca.2$scores[, 1:2])) + geom_point(aes(x = Comp.1, y = Comp.2, colour = poke.km.pca$clusters)) + scale_colour_gradientn(colours=wes_palette(n=3, name="BottleRocket2"))
+grid.arrange(x1, x2, ncol=2)
+
 # From Factoextra
 poke.km.2 <- eclust(as.data.frame(poke.mds.1), "kmeans", k = 4)
 fviz_silhouette(poke.km.2)
@@ -242,7 +247,6 @@ fviz_silhouette(poke.pam)
 #
 #
 #
-
 
 
 

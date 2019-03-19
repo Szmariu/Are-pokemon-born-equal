@@ -5,7 +5,15 @@ date: "10 marca 2019"
 output: html_document
 ---
 
-```{r, Libraries}
+```{r, echo=FALSE}
+knitr::opts_chunk$set(comment=NA)
+knitr::opts_chunk$set(fig.align='center')
+```
+
+
+
+
+```{r, Libraries, message = FALSE, warning = FALSE}
 library(dplyr)
 library(tidyr)
 library(ggplot2)
@@ -20,6 +28,7 @@ library(ClusterR)
 library(wesanderson)
 library(factoextra)
 library(clustertend)
+library(knitr)
 options(scipen=999)
 
 # Define nice colors
@@ -32,17 +41,20 @@ pokemon <- read.csv('data/Pokemon.csv')
 pokemon <- rename(pokemon, 'Special.Attack' = 'Sp..Atk', 'Special.Defense' = 'Sp..Def')
 ```
 
-```{r}
-pokemon %>% filter(pokemon$Name == 'Pikachu')
+```{r, comment=NA}
+kable(pokemon %>% filter(pokemon$Name == 'Pikachu'))
 dim(pokemon)
 ```
 
-```{r}
+```{r, comment=NA}
 str(pokemon)
 ```
 
 ```{r}
-summary(pokemon)
+a <- summary(pokemon)[,c(1:4,12,13)]
+b <- summary(pokemon)[,c(5:11)]
+kable(a)
+kable(b)
 ```
 
 ```{r}
@@ -55,7 +67,7 @@ poke <- poke[, c(6:11)]
 poke2 <- pokemon %>% filter(Legendary == 'True')
 ```
 
-```{r, OverallPlot, cache = TRUE}
+```{r, OverallPlot, cache = TRUE, fig.width=8, fig.height=8}
 # Bez total, są podobne
 poke <- pokemon[, c(6:11)]
 # Overall view
@@ -85,7 +97,7 @@ ggplot(pokemon) + geom_density(aes(x = Total), fill = cYellow, colour = cYellow)
 ggplot(pokemon) + geom_density(aes(x = Total), fill = cBlue, colour = cBlue) + facet_grid(Generation ~ Legendary)
 ```
 
-```{r, cache = TRUE}
+```{r, cache = TRUE, fig.width=8, fig.height=8}
 p1 <- ggplot(pokemon) + geom_density(aes(x = HP), fill = cYellow, colour = cYellow)
 p2 <- ggplot(pokemon) + geom_density(aes(x = Attack), fill = cYellow, colour = cYellow)
 p3 <- ggplot(pokemon) + geom_density(aes(x = Defense), fill = cYellow, colour = cYellow)
@@ -105,35 +117,36 @@ corrplot(pokemonCorrelation, order ="alphabet", method = 'number')
 
 ################ MDS
 
-# Classical multidim scaling
+# Classical multidimentional scaling
 
 ```{r, MDS1, cache = TRUE}
 poke.dist<-dist(poke) 
-as.matrix(poke.dist)[1:10, 1:10]
+kable(as.matrix(poke.dist)[1:10, 1:10])
 poke.mds.1 <- cmdscale(poke.dist, k=2) 
-summary(poke.mds.1)
+a <- summary(poke.mds.1)
+kable(a)
 plot(poke.mds.1) 
 ```
 
 # Shuckle poprawnie zidentyfikowany - napisać o tym!
 
-```{r, cache = TRUE}
+```{r, cache = TRUE, fig.width=8, fig.height=8}
 plot(poke.mds.1, type = 'n')
-text(poke.mds.1, labels = pokemon$Name, cex=0.8, adj = 0.5)
+text(poke.mds.1, labels = pokemon$Name, cex=0.5, adj = 0.5)
 ```
 
 # Surfaces in PCO + this for legendary
 
-```{r, MDS2, cache = TRUE}
-poke <- pokemon[, c(6:11)]
+```{r, cache = TRUE, results='hide', fig.width=8, fig.height=8, eval=FALSE}
+poke <- pokemon[, c(5:11)]
 poke.mds.2<-pco(poke.dist, k=2) 
-par(mfrow=c(2,4))
+par(mfrow=c(2,2))
 plot(poke.mds.2)
 title(main = "PCO")
 
 plot(poke.mds.2)
 title(main = "Total")
-#surf(poke.mds.2, poke$Total)
+surf(poke.mds.2, poke$Total)
 
 plot(poke.mds.2)
 title(main = "HP")
@@ -162,18 +175,57 @@ surf(poke.mds.2, poke$Speed)
 par(mfrow=c(1,1))
 ```
 
-```{r, MDS2Legendary, cache = TRUE, eval = FALSE}
+```{r, MDS2, cache = TRUE, results='hide', fig.width=8, fig.height=8, echo=FALSE}
+poke <- pokemon[, c(5:11)]
+poke.mds.2<-pco(poke.dist, k=2) 
+par(mfrow=c(2,2))
+plot(poke.mds.2)
+title(main = "PCO")
+
+plot(poke.mds.2)
+title(main = "Total")
+surf(poke.mds.2, poke$Total)
+
+plot(poke.mds.2)
+title(main = "HP")
+surf(poke.mds.2, poke$HP)
+
+plot(poke.mds.2)
+title(main = "Attack")
+surf(poke.mds.2, poke$Attack)
+
+plot(poke.mds.2)
+title(main = "Defense")
+surf(poke.mds.2, poke$Defense)
+
+plot(poke.mds.2)
+title(main = "Special Attack")
+surf(poke.mds.2, poke$Special.Attack)
+
+plot(poke.mds.2)
+title(main = "Special Defense")
+surf(poke.mds.2, poke$Special.Defense)
+
+plot(poke.mds.2)
+title(main = "Speed")
+surf(poke.mds.2, poke$Speed)
+
+par(mfrow=c(1,1))
+```
+
+
+```{r, cache = TRUE, results='hide', fig.width=8, fig.height=8, eval=FALSE}
 poke <- pokemon %>% filter(Legendary == 'True')
-poke <- poke[, c(6:11)]
-
+poke <- poke[, c(5:11)]
+poke.dist<-dist(poke) 
 poke.mds.2<-pco(poke.dist, k=2) 
-par(mfrow=c(2,4))
+par(mfrow=c(2,2))
 plot(poke.mds.2)
 title(main = "PCO")
 
 plot(poke.mds.2)
 title(main = "Total")
-#surf(poke.mds.2, poke$Total)
+surf(poke.mds.2, poke$Total)
 
 plot(poke.mds.2)
 title(main = "HP")
@@ -204,12 +256,55 @@ par(mfrow=c(1,1))
 poke <- pokemon[, c(6:11)]
 ```
 
+
+```{r, MDS2Legendary, cache = TRUE, results='hide', fig.width=8, fig.height=8, echo=FALSE}
+poke <- pokemon %>% filter(Legendary == 'True')
+poke <- poke[, c(5:11)]
+poke.dist<-dist(poke) 
+poke.mds.2<-pco(poke.dist, k=2) 
+par(mfrow=c(2,2))
+plot(poke.mds.2)
+title(main = "PCO")
+
+plot(poke.mds.2)
+title(main = "Total")
+surf(poke.mds.2, poke$Total)
+
+plot(poke.mds.2)
+title(main = "HP")
+surf(poke.mds.2, poke$HP)
+
+plot(poke.mds.2)
+title(main = "Attack")
+surf(poke.mds.2, poke$Attack)
+
+plot(poke.mds.2)
+title(main = "Defense")
+surf(poke.mds.2, poke$Defense)
+
+plot(poke.mds.2)
+title(main = "Special Attack")
+surf(poke.mds.2, poke$Special.Attack)
+
+plot(poke.mds.2)
+title(main = "Special Defense")
+surf(poke.mds.2, poke$Special.Defense)
+
+plot(poke.mds.2)
+title(main = "Speed")
+surf(poke.mds.2, poke$Speed)
+
+par(mfrow=c(1,1))
+
+poke <- pokemon[, c(6:11)]
+```
 # Analisying variables
 
 ```{r, MDS3, cache = TRUE}
-poke.dist.t<-dist(t(pokemon[, c(6:11)]))
+poke.dist.t<-dist(t(pokemon[, c(5:11)]))
 poke.mds.3<-cmdscale(poke.dist.t, k=2) 
-summary(poke.mds.3)	
+a <- summary(poke.mds.3)
+kable(a)	
 plot(poke.mds.3, type = 'n') 
 text(poke.mds.3, rownames(poke.mds.3), cex=0.8, adj = 0.5) 
 ```
@@ -217,9 +312,10 @@ text(poke.mds.3, rownames(poke.mds.3), cex=0.8, adj = 0.5)
 # Without the total variable
 
 ```{r, MDS3WithoutTotal, cache = TRUE}
-poke.dist.t.2<-dist(t(pokemon[, c(7:11)])) 
+poke.dist.t.2<-dist(t(pokemon[, c(6:11)])) 
 poke.mds.4<-cmdscale(poke.dist.t.2, k=2) 
-summary(poke.mds.4)
+a <- summary(poke.mds.4)
+kable(a)
 plot(poke.mds.4, type = 'n') 
 text(poke.mds.4, rownames(poke.mds.4), cex=0.8, adj = 0.5) 
 ```
@@ -229,14 +325,13 @@ text(poke.mds.4, rownames(poke.mds.4), cex=0.8, adj = 0.5)
 ```{r, GoodnessOfFit, cache = TRUE}
 poke <- pokemon[, c(6:11)]
 poke.dist <- dist(t(poke))  
-poke.mds.4 <- mds(poke.dist, ndim=2,  type="ordinal") # from smacof::
+poke.mds.4 <- mds(poke.dist, ndim=2,  type="ordinal") 
 poke.mds.4
 summary(poke.mds.4)
 plot(poke.mds.4)
 
-#stress.random.matrix <- randomstress(n=800, ndim=2, nrep = 1) 
-#poke.mds.4$stress/ mean(stress.random.matrix)
-# 0.11 - fair
+stress.random.matrix <- randomstress(n=800, ndim=2, nrep = 1) 
+poke.mds.4$stress/ mean(stress.random.matrix)
 ```
 
 # PCA
@@ -245,9 +340,9 @@ plot(poke.mds.4)
 poke <- pokemon[, c(6:11)]
 
 # PCA
-poke.pca.1<-prcomp(poke, center=TRUE, scale.=TRUE) # stats::
+poke.pca.1<-prcomp(poke, center=TRUE, scale.=TRUE) 
 poke.pca.1
-poke.pca.1$rotation #only “rotation” part, the matrix of variable loadings
+poke.pca.1$rotation
 summary(poke.pca.1)
 # Variance plot
 plot(poke.pca.1, type = "l")
@@ -273,7 +368,7 @@ summary(poke.pca.3)
 print(loadings(poke.pca.3), digits=2, cutoff=0.4, sort=TRUE)
 ```
 
-```{r}
+```{r, cache = TRUE}
 fviz_pca_ind(poke.pca.1, col.ind="cos2", geom = "point", gradient.cols = c(cYellow, cBlue))
 ```
 
@@ -307,30 +402,49 @@ fviz_nbclust(as.data.frame(poke.mds.1), FUNcluster=pam)
 
 ```{r, CLuster1, cache = TRUE}
 poke.km <- KMeans_rcpp(poke.mds.1.center, clusters=4, num_init=30, max_iters = 10000) 
-ggplot(as.data.frame(poke.mds.1.center)) + geom_point(aes(x = V1, y = V2, colour = poke.km$clusters)) + scale_colour_gradientn(colours=wes_palette(n=3, name="BottleRocket2"))
-
 poke.km.pca <- KMeans_rcpp(poke.pca.2$scores[, 1:2], clusters=4, num_init=30, max_iters = 10000) 
-ggplot(as.data.frame(poke.pca.2$scores[, 1:2])) + geom_point(aes(x = Comp.1, y = Comp.2, colour = poke.km.pca$clusters)) + scale_colour_gradientn(colours=wes_palette(n=3, name="BottleRocket2"))
+
+x1 <- ggplot(as.data.frame(poke.mds.1.center)) + geom_point(aes(x = V1, y = V2, colour = poke.km$clusters)) + scale_colour_gradientn(colours=wes_palette(n=3, name="BottleRocket2"), guide = FALSE)
+x2 <- ggplot(as.data.frame(poke.pca.2$scores[, 1:2])) + geom_point(aes(x = Comp.1, y = Comp.2, colour = poke.km.pca$clusters)) + scale_colour_gradientn(colours=wes_palette(n=3, name="BottleRocket2"), guide = FALSE)
 ```
+
+```{r}
+grid.arrange(x1, x2, nrow=2)
+```
+
 
 # From Factoextra
 
-```{r, Cluster2, cache = TRUE}
+```{r, cache = TRUE, results='hide', eval = FALSE}
 poke.km.2 <- eclust(as.data.frame(poke.mds.1), "kmeans", k = 4)
-fviz_silhouette(poke.km.2)
+poke.km.2.pca <- eclust(as.data.frame(poke.pca.2$scores[, 1:2]), "kmeans", k = 4)
 
-poke.km.2 <- eclust(as.data.frame(poke.pca.2$scores[, 1:2]), "kmeans", k = 4)
 fviz_silhouette(poke.km.2)
+fviz_silhouette(poke.km.2.pca)
+```
+
+```{r, Cluster2, cache = TRUE, results='hide', echo = FALSE}
+poke.km.2 <- eclust(as.data.frame(poke.mds.1), "kmeans", k = 4)
+poke.km.2.pca <- eclust(as.data.frame(poke.pca.2$scores[, 1:2]), "kmeans", k = 4)
+
+fviz_silhouette(poke.km.2)
+fviz_silhouette(poke.km.2.pca)
 ```
 
 # PAM
 
-```{r, CLuster3, cache = TRUE}
+```{r, CLuster3cache = TRUE, results='hide', eval = FALSE}
 poke.pam <- eclust(as.data.frame(poke.mds.1), "pam", k = 4)
+poke.pam.2 <- eclust(as.data.frame(poke.pca.2$scores[, 1:2]), "pam", k = 4)
 fviz_silhouette(poke.pam)
+fviz_silhouette(poke.pam.2)
+```
 
-poke.pam <- eclust(as.data.frame(poke.pca.2$scores[, 1:2]), "pam", k = 4)
+```{r, CLuster3cache = TRUE, results='hide', echo = FALSE}
+poke.pam <- eclust(as.data.frame(poke.mds.1), "pam", k = 4)
+poke.pam.2 <- eclust(as.data.frame(poke.pca.2$scores[, 1:2]), "pam", k = 4)
 fviz_silhouette(poke.pam)
+fviz_silhouette(poke.pam.2)
 ```
 
 
