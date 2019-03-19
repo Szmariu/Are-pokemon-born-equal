@@ -131,7 +131,55 @@ plot(poke.mds.4, type = 'n')
 text(poke.mds.4, rownames(poke.mds.4), cex=0.8, adj = 0.5) 
 
 
+################ Goodness of fit
 
+# MDS 
+library(smacof)
+poke <- pokemon[, c(6:11)]
+poke.dist <- dist(t(poke))  
+poke.mds.4 <- mds(poke.dist, ndim=2,  type="ordinal") # from smacof::
+poke.mds.4
+summary(poke.mds.4)
+plot(poke.mds.4)
+
+stress.random.matrix <- randomstress(n=800, ndim=2, nrep = 1) 
+poke.mds.4$stress/ mean(stress.random.matrix)
+# 0.11 - fair
+
+
+############## Clustering k-means
+
+library(NbClust)
+library(ClusterR)
+library(wesanderson)
+library(factoextra)
+library(clustertend)
+
+# Prepare data
+poke.dist<-dist(poke) 
+poke.mds.1 <- cmdscale(poke.dist, k=2) 
+poke.mds.1.center <- center_scale(poke.mds.1)
+poke.mds.1.center <- poke.mds.1
+
+# Optimal number of clusters
+c3<-NbClust(poke.mds.1.center , distance="euclidean", min.nc=2, max.nc=10, method="kmeans", index="silhouette")
+c3$All.index
+
+fviz_nbclust(as.data.frame(poke.mds.1), FUNcluster=pam) 
+
+
+# From ClusteR
+poke.km <- KMeans_rcpp(poke.mds.1.center, clusters=4, num_init=30, max_iters = 10000) 
+poke.km.ploting <- bind_cols(as.data.frame(poke.mds.1.center), as.data.frame(poke.km$clusters))
+ggplot(poke.km.ploting) + geom_point(aes(x = V1, y = V2, colour = poke.km$clusters)) + scale_colour_gradientn(colours=wes_palette(n=3, name="BottleRocket2"))
+
+# From Factoextra
+poke.km.2 <- eclust(as.data.frame(poke.mds.1), "kmeans", k = 4)
+fviz_silhouette(poke.km.2)
+
+# Praktycznie identyczne
+poke.pam <- eclust(as.data.frame(poke.mds.1), "pam", k = 4)
+fviz_silhouette(poke.pam)
 
 
 
