@@ -2,9 +2,25 @@ library(dplyr)
 library(tidyr)
 library(ggplot2)
 library(gridExtra)
+library(corrplot) 
+library(labdsv)
+library(smacof)
+library(psych)
+library(pca3d)
+library(NbClust)
+library(ClusterR)
+library(wesanderson)
+library(factoextra)
+library(clustertend)
 
 options(scipen=999)
 
+
+# Define nice colors
+cYellow = '#FADA5E'
+cBlue = '#378CC7'
+ 
+# Read data
 pokemon <- read.csv('data/Pokemon.csv')
 pokemon <- rename(pokemon, 'Special.Attack' = 'Sp..Atk', 'Special.Defense' = 'Sp..Def')
 
@@ -18,12 +34,21 @@ dim(pokemon)
 str(pokemon)
 summary(pokemon)
 
-# Define nice colors
-cYellow = '#FADA5E'
-cBlue = '#378CC7'
+# 3 warianty danych do wyboru - jakoś pokazać
+poke <- pokemon[, c(5:11)]
+
+# Bez total, są podobne
+poke <- pokemon[, c(6:11)]
+# Overall view
+plot(poke, col = cBlue, pch = 19)
+
+# Tylko legendarne, ciekawe wyniki
+poke <- pokemon %>% filter(Legendary == 'True')
+poke <- poke[, c(6:11)]
+poke2 <- pokemon %>% filter(Legendary == 'True')
 
 
-# Total
+# Summary plots
 ggplot(pokemon) + geom_bar(aes(x = Generation), fill = cYellow)
 ggplot(pokemon) + geom_bar(aes(x = Legendary), fill = cYellow)
 ggplot(pokemon) + geom_bar(aes(x = Type.1), fill = cBlue) 
@@ -43,28 +68,15 @@ p5 <- ggplot(pokemon) + geom_density(aes(x = Special.Defense), fill = cYellow, c
 p6 <- ggplot(pokemon) + geom_density(aes(x = Speed), fill = cYellow, colour = cYellow)
 grid.arrange(p1, p2, p3, p4, p5, p6, nrow = 2)
 
-########### Correlation
-
-library(corrplot) 
+################# Correlation
 
 # Correlation plot
 pokemonCorrelation <- cor(pokemon[, c(6:11)], method="pearson") 
-print(dataCorrelation, digits=2)
-corrplot(dataCorrelation, order ="alphabet")
+print(pokemonCorrelation, digits=2)
+corrplot(pokemonCorrelation, order ="alphabet", method = 'number')
 
 
-# Basic MDS
-
-# 3 warianty danych do wyboru - jakoś pokazać
-poke <- pokemon[, c(5:11)]
-
-# Bez total, są podobne
-poke <- pokemon[, c(6:11)]
-
-# Tylko legendarne, ciekawe wyniki
-poke <- pokemon %>% filter(Legendary == 'True')
-poke <- poke[, c(6:11)]
-poke2 <- pokemon %>% filter(Legendary == 'True')
+################ MDS
 
 # Classical multidim scaling
 poke.dist<-dist(poke) 
@@ -77,8 +89,7 @@ plot(poke.mds.1)
 plot(poke.mds.1, type = 'n')
 text(poke.mds.1, labels = pokemon$Name, cex=0.8, adj = 0.5)
 
-# Surfaces in PCO
-library("labdsv")
+# Surfaces in PCO + this for legendary
 poke.mds.2<-pco(poke.dist, k=2) 
 dev.off()
 par(mfrow=c(2,4))
@@ -134,7 +145,6 @@ text(poke.mds.4, rownames(poke.mds.4), cex=0.8, adj = 0.5)
 ################ Goodness of fit
 
 # MDS 
-library(smacof)
 poke <- pokemon[, c(6:11)]
 poke.dist <- dist(t(poke))  
 poke.mds.4 <- mds(poke.dist, ndim=2,  type="ordinal") # from smacof::
@@ -147,14 +157,47 @@ poke.mds.4$stress/ mean(stress.random.matrix)
 # 0.11 - fair
 
 
+
+############### PCA 
+
+poke <- pokemon[, c(6:11)]
+
+# PCA
+poke.pca.1<-prcomp(poke, center=TRUE, scale.=TRUE) # stats::
+poke.pca.1
+poke.pca.1$rotation #only “rotation” part, the matrix of variable loadings
+summary(poke.pca.1)
+# Variance plot
+plot(poke.pca.1, type = "l")
+fviz_pca_var(poke.pca.1, col.var="black")
+
+# PCA 2
+poke.pca.2<-princomp(poke)
+loadings(poke.pca.2)
+plot(poke.pca.2)
+fviz_pca_var(poke.pca.2, col.var="black")
+
+# Rotated and cut - easy interpretation
+
+poke.pca.3 <- principal(poke, nfactors=3, rotate="varimax")
+poke.pca.3
+summary(poke.pca.3)
+# printing only the significant loadings
+print(loadings(poke.pca.3), digits=2, cutoff=0.4, sort=TRUE)
+
+
+# Visualise 
+fviz_pca_ind(poke.pca.1, col.ind="cos2", geom = "point", gradient.cols = c(cYellow, cBlue))
+
+# 3d
+poke.group <- factor(pokemon$Legendary)
+pca3d(poke.pca.1, group = poke.group, legend="topleft")
+pca3d(poke.pca.1, group = poke.group, biplot=TRUE, biplot.vars=3, legend="topleft") 
+
+
+snapshotPCA3d(file="first_plot.png") 
+
 ############## Clustering k-means
-
-library(NbClust)
-library(ClusterR)
-library(wesanderson)
-library(factoextra)
-library(clustertend)
-
 # Prepare data
 poke.dist<-dist(poke) 
 poke.mds.1 <- cmdscale(poke.dist, k=2) 
@@ -173,13 +216,34 @@ poke.km <- KMeans_rcpp(poke.mds.1.center, clusters=4, num_init=30, max_iters = 1
 poke.km.ploting <- bind_cols(as.data.frame(poke.mds.1.center), as.data.frame(poke.km$clusters))
 ggplot(poke.km.ploting) + geom_point(aes(x = V1, y = V2, colour = poke.km$clusters)) + scale_colour_gradientn(colours=wes_palette(n=3, name="BottleRocket2"))
 
+poke.km.pca <- KMeans_rcpp(poke.pca.2$scores[, 1:2], clusters=4, num_init=30, max_iters = 10000) 
+poke.km.ploting <- bind_cols(poke.pca.2$scores[, 1:2], as.data.frame(poke.km.pca$clusters))
+ggplot(poke.km.ploting) + geom_point(aes(x = V1, y = V2, colour = poke.km.pca$clusters)) + scale_colour_gradientn(colours=wes_palette(n=3, name="BottleRocket2"))
+
 # From Factoextra
 poke.km.2 <- eclust(as.data.frame(poke.mds.1), "kmeans", k = 4)
 fviz_silhouette(poke.km.2)
 
+poke.km.2 <- eclust(as.data.frame(poke.pca.2$scores[, 1:2]), "kmeans", k = 4)
+fviz_silhouette(poke.km.2)
+
+
 # Praktycznie identyczne
 poke.pam <- eclust(as.data.frame(poke.mds.1), "pam", k = 4)
 fviz_silhouette(poke.pam)
+
+poke.pam <- eclust(as.data.frame(poke.pca.2$scores[, 1:2]), "pam", k = 4)
+fviz_silhouette(poke.pam)
+
+### Wnioski
+#
+# W danych są dwa clustry - przed i po ewolucją
+#
+# Wychodzi na to, że te high tier dielą się na - zwykłe (attack + hp), te z dużym def i sp.def i te z dużym speed i sp.at
+#
+#
+#
+
 
 
 
