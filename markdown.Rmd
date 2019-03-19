@@ -13,7 +13,7 @@ knitr::opts_chunk$set(fig.align='center')
 # Introduction
 ## Goal of the paper
 
-# Preparing data
+# Data preparation
 ## Libraries
 ```{r, Libraries, message = FALSE, warning = FALSE}
 library(dplyr)
@@ -47,6 +47,7 @@ pokemon <- read.csv('data/Pokemon.csv')
 pokemon <- rename(pokemon, 'Special.Attack' = 'Sp..Atk', 'Special.Defense' = 'Sp..Def')
 ```
 
+# Data exploration
 ## First look at the data
 
 ```{r, comment=NA, cache = TRUE}
@@ -56,6 +57,12 @@ dim(pokemon)
 ```
 
 Pikachu is present and has the right statistics. Overall, this dataset has 800 observations and 11 variables.
+
+```{r, echo=FALSE, out.width = "250px"}
+knitr::include_graphics("assets/pikachu.png")
+```
+
+<center>*Pikachu, the most iconic pokemon. Introduced in the 1st generation. Source: bulbapedia.bulbagarden.net*</center>   
 
 ```{r, comment=NA, cache = TRUE}
 str(pokemon)
@@ -174,35 +181,62 @@ All of them follow a roughly normal distribution, with means around 55. Some out
 
 ## Correlation plot
 
+To see how the variables interact with each other, we can compute and display the correlation matrix. 
+
 ```{r, correlationPlot, cache = TRUE}
 pokemonCorrelation <- cor(pokemon[, c(6:11)], method="pearson") 
 print(pokemonCorrelation, digits=2)
 corrplot(pokemonCorrelation, order ="alphabet", method = 'number')
 ```
 
-################ MDS
+There are no strong correlations. Some mild ones can be observed between Defense and Special Defense, and Special Defense and Special Attack. Also note a absolute lack of correlation between Defense and Speed. 
 
-# Classical multidimentional scaling
 
-```{r, MDS1, cache = TRUE}
+# Multidimensional Scaling
+##  Classical multidimentional scaling
+
+After exploring the dataset, we can move to multidimensional scaling. The general idea it that aldough we have 6 (or 7 when counting the Total) variables, there are similarities beetwen them, that would allow us to reduce the number of variables to 2, all without loosing too much information.  
+
+First, we have to compute the distance matrix for our data subset, then feed it into the cmdscale function from the stats package. As a result we'll be able to reduce the number of variables to 2.
+
+```{r, MDS1, cache = TRUE, fig.width=8, fig.height=8}
 poke.dist<-dist(poke) 
-kable(as.matrix(poke.dist)[1:10, 1:10])
-poke.mds.1 <- cmdscale(poke.dist, k=2) 
-a <- summary(poke.mds.1)
+a <- as.matrix(poke.dist)[1:10, 1:10]
 kable(a)
+poke.mds.1 <- cmdscale(poke.dist, k=2) 
+b <- summary(poke.mds.1)
+kable(b)
 plot(poke.mds.1) 
 ```
 
-# Shuckle poprawnie zidentyfikowany - napisać o tym!
+The results look promising - most of the data is located along the x axis, with some outliers on the top, bottom, and the left side. There are two clear major clusters in the data - maybe they have something to do with the dual-peak distribution discovered earilier? The data also follows a kind of "cone" distribution, having a low variance for x < 0 and higher for x > 0.
+
+## Closer look at the clusters and outliers 
+
+We can try to gain more insights by displaying the names of the pokemon, and comparing the results to a outside source, the pokemon wikipedia.
 
 ```{r, cache = TRUE, fig.width=8, fig.height=8}
 plot(poke.mds.1, type = 'n')
 text(poke.mds.1, labels = pokemon$Name, cex=0.5, adj = 0.5)
 ```
 
-# Surfaces in PCO + this for legendary
 
-```{r, cache = TRUE, results='hide', fig.width=8, fig.height=8, eval=FALSE}
+The plot looks crowded, but we can gain much insight from it. First, we can take a look at the outlier at the bottom, in the center **Shuckle**. According to Bulbapedia *"Shuckle has the most extreme stat distribution of any Pokémon, being either the best or in the bottom three of every base stat"*. This is a great information, because it means the MDS algorithm was able to idenfity the this outlier. 
+
+```{r, echo=FALSE, out.width = "250px"}
+knitr::include_graphics("assets/shuckle.png")
+```
+
+<center>*Shuckle, looslely based on the real-life endoliths. Introduced in the 2nd generation. Source: bulbapedia.bulbagarden.net*</center>   
+
+Other interesting pokemon are the Pichu, that can be found on the left-hand side in the center, that is one of the weakes pokemons, and Mewtwo Mega, that can be found on the right-hand side, also in the center, that is one of the most powerful pokemon. 
+
+
+# Idenfyting the infuence of different variables on the MDS
+To see the effects of different variables, we can plot their surfaces on the scatter plots. 
+We'll be using the pco() function that is a wrapper for the cmdscale() to enable better ploting.
+
+```{r, eval=FALSE}
 poke <- pokemon[, c(5:11)]
 poke.mds.2<-pco(poke.dist, k=2) 
 par(mfrow=c(2,2))
@@ -226,12 +260,12 @@ title(main = "Defense")
 surf(poke.mds.2, poke$Defense)
 
 plot(poke.mds.2)
-title(main = "Special Attack")
-surf(poke.mds.2, poke$Special.Attack)
-
-plot(poke.mds.2)
 title(main = "Special Defense")
 surf(poke.mds.2, poke$Special.Defense)
+
+plot(poke.mds.2)
+title(main = "Special Attack")
+surf(poke.mds.2, poke$Special.Attack)
 
 plot(poke.mds.2)
 title(main = "Speed")
@@ -239,6 +273,7 @@ surf(poke.mds.2, poke$Speed)
 
 par(mfrow=c(1,1))
 ```
+
 
 ```{r, MDS2, cache = TRUE, results='hide', fig.width=8, fig.height=8, echo=FALSE}
 poke <- pokemon[, c(5:11)]
@@ -264,12 +299,12 @@ title(main = "Defense")
 surf(poke.mds.2, poke$Defense)
 
 plot(poke.mds.2)
-title(main = "Special Attack")
-surf(poke.mds.2, poke$Special.Attack)
-
-plot(poke.mds.2)
 title(main = "Special Defense")
 surf(poke.mds.2, poke$Special.Defense)
+
+plot(poke.mds.2)
+title(main = "Special Attack")
+surf(poke.mds.2, poke$Special.Attack)
 
 plot(poke.mds.2)
 title(main = "Speed")
@@ -278,8 +313,16 @@ surf(poke.mds.2, poke$Speed)
 par(mfrow=c(1,1))
 ```
 
+We can see many interesting interactions. It seems that going along the X axis to the rigth directly increases the Total and Attack statistics. The HP also increases, but only if we stay near the 0 on the Y axis. When analising the Y axis, it seems that going down increases the Defense and Special Defense, while going up and to the left increases the Special Attack and Speed.  
 
-```{r, cache = TRUE, results='hide', fig.width=8, fig.height=8, eval=FALSE}
+From this, we can see that there is a kind of a trade-off system. The X axis functions as a "power lever", gennerally the further right the more powerful the pokemon.  
+All powerful pokemon have higher attack, and Total. As for the other stats, there seems to be 3 paths - the can stay at Y ~ 0, and get more HP, they can get below Y < 0, and get Defense and Special Defense, or they can go Y > 0, and get Special Attack and Speed.  
+
+It seems that for the most powerful pokemon, they can be either Agressive (Y > 0), Defensive (Y < 0), or well-rounded (Y ~ 0). It also looks like the differences are far smaller for the weker pokemon.  
+
+To investigate this further, we can do the same analisys only for the legendary pokemon. 
+
+```{r, eval=FALSE}
 poke <- pokemon %>% filter(Legendary == 'True')
 poke <- poke[, c(5:11)]
 poke.dist<-dist(poke) 
@@ -305,12 +348,12 @@ title(main = "Defense")
 surf(poke.mds.2, poke$Defense)
 
 plot(poke.mds.2)
-title(main = "Special Attack")
-surf(poke.mds.2, poke$Special.Attack)
-
-plot(poke.mds.2)
 title(main = "Special Defense")
 surf(poke.mds.2, poke$Special.Defense)
+
+plot(poke.mds.2)
+title(main = "Special Attack")
+surf(poke.mds.2, poke$Special.Attack)
 
 plot(poke.mds.2)
 title(main = "Speed")
@@ -348,12 +391,12 @@ title(main = "Defense")
 surf(poke.mds.2, poke$Defense)
 
 plot(poke.mds.2)
-title(main = "Special Attack")
-surf(poke.mds.2, poke$Special.Attack)
-
-plot(poke.mds.2)
 title(main = "Special Defense")
 surf(poke.mds.2, poke$Special.Defense)
+
+plot(poke.mds.2)
+title(main = "Special Attack")
+surf(poke.mds.2, poke$Special.Attack)
 
 plot(poke.mds.2)
 title(main = "Speed")
@@ -363,7 +406,13 @@ par(mfrow=c(1,1))
 
 poke <- pokemon[, c(6:11)]
 ```
-# Analisying variables
+
+The results are simmilar, but there are some differences. As prevously, the X axis serves as a kind of "power level". 
+On the Y axis, it looks like that for Y > 0 HP, Defense and Special Defense increase, and for the Y < 0, the Attack and Special Attack increase. Note that while Attack and Special Attack seem to be also correlated with the power level of the creature, this in not true for Defense and Special Defense. Speed seems to be more individual, aldough favouring the Y < 0 side. 
+
+## MDS on variables 
+
+We can test this interactions beetwen variables, by performing the MDS on a transposed subset of our dataset. 
 
 ```{r, MDS3, cache = TRUE}
 poke.dist.t<-dist(t(pokemon[, c(5:11)]))
@@ -374,7 +423,11 @@ plot(poke.mds.3, type = 'n')
 text(poke.mds.3, rownames(poke.mds.3), cex=0.8, adj = 0.5) 
 ```
 
-# Without the total variable
+The X axis was taken wholey by the Total variable. On the Y axis, we can see a partial confirmation of the conslusions from above - indeed the Speed and Special Attack occupy the Y > 0, and Defense the Y < 0. Only Special Defense seems to be closer to Attack and HP.
+
+## MDS on variables - excluding the Total
+
+To see the differences better, we can perform the analisys again, this time without the Total varaible. 
 
 ```{r, MDS3WithoutTotal, cache = TRUE}
 poke.dist.t.2<-dist(t(pokemon[, c(6:11)])) 
@@ -385,7 +438,11 @@ plot(poke.mds.4, type = 'n')
 text(poke.mds.4, rownames(poke.mds.4), cex=0.8, adj = 0.5) 
 ```
 
-################ Goodness of fit
+Removing the total variable gives a better picture - on this graph the left-top corner represents the Agresive group, the right-top the Defensive, and the bottom-middle the Well-rounded group. 
+
+## Testing the Goodness of Fit
+
+To
 
 ```{r, GoodnessOfFit, cache = TRUE}
 poke <- pokemon[, c(6:11)]
