@@ -10,9 +10,11 @@ knitr::opts_chunk$set(comment=NA)
 knitr::opts_chunk$set(fig.align='center')
 ```
 
+# Introduction
+## Goal of the paper
 
-
-
+# Preparing data
+## Libraries
 ```{r, Libraries, message = FALSE, warning = FALSE}
 library(dplyr)
 library(tidyr)
@@ -36,66 +38,127 @@ cYellow = '#FADA5E'
 cBlue = '#378CC7'
 ```
 
+## Loading the data from a csv. 
+
+The source is a fantastic [Kaggle](https://www.kaggle.com/abcsds/pokemon) dataset containing the statistick for every pokemon released. 
+
 ```{r}
 pokemon <- read.csv('data/Pokemon.csv')
 pokemon <- rename(pokemon, 'Special.Attack' = 'Sp..Atk', 'Special.Defense' = 'Sp..Def')
 ```
 
-```{r, comment=NA}
-kable(pokemon %>% filter(pokemon$Name == 'Pikachu'))
+## First look at the data
+
+```{r, comment=NA, cache = TRUE}
+a <- pokemon %>% filter(pokemon$Name == 'Pikachu')
+kable(a)
 dim(pokemon)
 ```
 
-```{r, comment=NA}
+Pikachu is present and has the right statistics. Overall, this dataset has 800 observations and 11 variables.
+
+```{r, comment=NA, cache = TRUE}
 str(pokemon)
 ```
 
-```{r}
+```{r, cache = TRUE}
 a <- summary(pokemon)[,c(1:4,12,13)]
 b <- summary(pokemon)[,c(5:11)]
 kable(a)
 kable(b)
 ```
 
-```{r}
-# 3 warianty danych do wyboru - jakoś pokazać
+The dataset has a nice distribution of variables, 2 categorical, 1 binary and 8 interval. The X variable is a pokemon Id. Note that it is not unique, because later *generations* added new *evolutions* for existing pokemon.  
+**Type 1** designates the primary type of the pokemon - it influences it's strengts and weekneses (e.g. fire pokemon are weak against water pokemon) and it's overall design. Some pokemon also have a second type.   
+**Generation** is the number of generation this pokemon it's from. First generation originated in 1996, and the 6th one in 2013. This dataset is slightly old, as it lack the 7 generation from 2016.   
+Next are the statisticks for each pokemon.The **Total** vairable is a simple sum of all statistics. **HP** stands for Hit Points, the pokemon *health*. **Attack** signifies how much damage can it do, and it's compared to the **defense** of the enemy's pokemon. **Special attack** is simmilar to normal attack, but it's compared to the **Special Defense**. **Speed** indicates which pokemon attacks first in a given round.
+Aside from these basic stats, each pokemon has it's *moves*, *abilities* and other variables not included in this dataset. That being said, the basic statline and it's distribution has a great impact on how powerful a given pokemon is.
+
+## Subsetting the dataset 
+
+```{r, cache = TRUE}
+# All stats
 poke <- pokemon[, c(5:11)]
 
-# Tylko legendarne, ciekawe wyniki
+# All stats, legendary
 poke <- pokemon %>% filter(Legendary == 'True')
 poke <- poke[, c(6:11)]
 poke2 <- pokemon %>% filter(Legendary == 'True')
+
+# Stats without the Total
+poke <- pokemon[, c(6:11)]
 ```
 
+For futher analisys, there are 3 coiches of variables. First is the one including all statistics of a given pokemon - Total, HP, Attack, Defense, Special Attack, Special Defense and Speed. Generations is ignored, since it is a nominal variable.
+
+Second choise are only the Legendary Pokemon - a small (65) subset of all pokemon, containign the rarest and most powerful pokemon.
+
+Third choise it again all pokemon, but withous the Total statistic, since it is produced but all other statistics already included.   
+   
+   
+## Visual analisys   
+We can take a look at the overall distirbutions by plotting the scatter plots for all variables. 
+
 ```{r, OverallPlot, cache = TRUE, fig.width=8, fig.height=8}
-# Bez total, są podobne
-poke <- pokemon[, c(6:11)]
-# Overall view
 plot(poke, col = cBlue, pch = 19)
 ```
+
+All variables seem to be nicely distributed, the doesn't seem to be any strong correlations. The HP statitick seems to be the most independent. 
+Some outliers can be seen, but they aren't very strong.   
+
+Now, we can take a closer look at the distributions of some of the variables. 
 
 ```{r, cache = TRUE}
 ggplot(pokemon) + geom_bar(aes(x = Generation), fill = cYellow)
 ```
 
+The number of pokemon per generation seems to follow a "tick-tok" distribution - each even generation has a significanly lower number of new pokemon. 
+
 ```{r, cache = TRUE}
 ggplot(pokemon) + geom_bar(aes(x = Legendary), fill = cYellow)
 ```
+
+There is a large difference beetwen the number of legendary pokemon (65) and normal ones (735)
 
 ```{r, cache = TRUE}
 ggplot(pokemon) + geom_bar(aes(x = Type.1), fill = cBlue)
 ```
 
+The number of pokemon in each cattegory in not distibutet evenly. There are a lot more of the *water*, *normal* and *bug* types of pokemons. These might be a design decision, since a lot of the time in-game take place in forrests and simmilar locations. Also notable is the *flying* type - almost no pokemon has it as it's first type. 
+
 ```{r, cache = TRUE}
 ggplot(pokemon) + geom_bar(aes(x = Type.2), fill = cBlue)
 ```
 
+Most pokemon don't have a second type - but when they do, it's typically *flying*.  
+
+We can take a look how is the Total variable distributed. It gives a good estimation on how powerful a certain pokemon can be. 
+
 ```{r, cache = TRUE}
 ggplot(pokemon) + geom_density(aes(x = Total), fill = cYellow, colour = cYellow) 
+```
+
+The distribution has two strong peaks - one at around 300, and the other at 500. These is because pokemon has a machanism of *evolution*. Many pokemon (but not all) have at least two forms. One that is weaker (e.g. a bug) and can be encountered earlier in the game, and second (e.g. a butterfly) that is a result of a *evolution* that a pokemon undergoes when it reaches a certain level of expirience. To give a sense of progress, the evolved formes are typically much stronger. 
+
+```{r, cache = TRUE}
 ggplot(pokemon) + geom_density(aes(x = Total), fill = cBlue, colour = cBlue) + facet_grid(Legendary ~ .)
+```
+
+When comparing the Total beetwen Legendary and non-legendary pokemon, it is claer that most high spots are occupied by the legendary pokemon. They do seem to also follow ths interesting two-peak distribution, even though almost none of the evolve. 
+
+```{r, cache = TRUE}
 ggplot(pokemon) + geom_density(aes(x = Total), fill = cYellow, colour = cYellow) + facet_grid(Generation ~ .)
+```
+
+We can now see, if there exist any "Power Creep" in pokemon. "Power creep" is a idea, that each new version on generation is stronger than the previous one, typically to help sell new editions. This is a significant problem in many card games. When comparing the Total beetwen generations the "power creep" seems to be nonexitant. It has to be noted that the tow-peak distribution seems to be getting stronger with each generation. 
+
+```{r, cache = TRUE}
 ggplot(pokemon) + geom_density(aes(x = Total), fill = cBlue, colour = cBlue) + facet_grid(Generation ~ Legendary)
 ```
+
+Comparing Total over generations and legendary vs non-legendary pokemon doesn't bring new insights - the distributions seems to be quite consistent.   
+
+We can take a look how are the other variables distributed. 
 
 ```{r, cache = TRUE, fig.width=8, fig.height=8}
 p1 <- ggplot(pokemon) + geom_density(aes(x = HP), fill = cYellow, colour = cYellow)
@@ -104,10 +167,12 @@ p3 <- ggplot(pokemon) + geom_density(aes(x = Defense), fill = cYellow, colour = 
 p4 <- ggplot(pokemon) + geom_density(aes(x = Special.Attack), fill = cYellow, colour = cYellow)
 p5 <- ggplot(pokemon) + geom_density(aes(x = Special.Defense), fill = cYellow, colour = cYellow)
 p6 <- ggplot(pokemon) + geom_density(aes(x = Speed), fill = cYellow, colour = cYellow)
-grid.arrange(p1, p2, p3, p4, p5, p6, nrow = 2)
+grid.arrange(p1, p2, p3, p4, p5, p6, nrow = 3)
 ```
 
-# Correlation plot
+All of them follow a roughly normal distribution, with means around 55. Some outliers in each cattegory can be seen. 
+
+## Correlation plot
 
 ```{r, correlationPlot, cache = TRUE}
 pokemonCorrelation <- cor(pokemon[, c(6:11)], method="pearson") 
@@ -373,7 +438,7 @@ fviz_pca_ind(poke.pca.1, col.ind="cos2", geom = "point", gradient.cols = c(cYell
 ```
 
 ```{r, PCA3d}
-poke.group <- factor(pokemon$Legendary)
+# poke.group <- factor(pokemon$Legendary)
 #pca3d(poke.pca.1, group = poke.group, legend="topleft")
 #pca3d(poke.pca.1, group = poke.group, biplot=TRUE, biplot.vars=3, legend="topleft") 
 ```
