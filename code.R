@@ -12,7 +12,7 @@ library(ClusterR)
 library(wesanderson)
 library(factoextra)
 library(clustertend)
-
+library(knitr)
 options(scipen=999)
 
 
@@ -165,10 +165,9 @@ poke <- pokemon[, c(6:11)]
 
 # PCA
 poke.pca.1<-prcomp(poke, center=TRUE, scale.=TRUE) # stats::
-poke.pca.1
-poke.pca.1$rotation #only “rotation” part, the matrix of variable loadings
+a <- poke.pca.1$rotation
+kable(a, digits = 2)
 summary(poke.pca.1)
-# Variance plot
 plot(poke.pca.1, type = "l")
 fviz_pca_var(poke.pca.1, col.var="black")
 
@@ -183,12 +182,13 @@ fviz_pca_var(poke.pca.2, col.var="black")
 poke.pca.3 <- principal(poke, nfactors=3, rotate="varimax")
 poke.pca.3
 summary(poke.pca.3)
+biplot(poke.pca.3, hist.col = cYellow, smoother = TRUE)
 # printing only the significant loadings
 print(loadings(poke.pca.3), digits=2, cutoff=0.4, sort=TRUE)
 
 
 # Visualise 
-fviz_pca_ind(poke.pca.1, col.ind="cos2", geom = "point", gradient.cols = c(cYellow, cBlue))
+fviz_pca_ind(poke.pca.3, col.ind="cos2", geom = "point", gradient.cols = c(cYellow, cBlue))
 
 # 3d
 poke.group <- factor(pokemon$Legendary)

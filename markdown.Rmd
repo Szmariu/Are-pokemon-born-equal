@@ -2,16 +2,22 @@
 title: "Are Pokemon Born Equal? Analisys Using Multidimensional Scaling and Clustering"
 author: "Michał Szałański"
 date: "10 marca 2019"
-output: html_document
+output:
+  html_document: default
+  pdf_document: default
 ---
 
 ```{r, echo=FALSE}
 knitr::opts_chunk$set(comment=NA)
 knitr::opts_chunk$set(fig.align='center')
+knitr::opts_chunk$set(cache = TRUE)
 ```
 
 # Introduction
 ## Goal of the paper
+
+Since I played the Pokemon Red 10 years ago on my Gameboy Advance, I wondered about the statistics that define different pokemon. Are the fair? Are some pokemon just better than others, or maybe there are some groups, or specializations? When I encountered the pokemon dataset on Kaggle, I knew this was a chance to answer this questions.   
+The goal of this paper is to test what distributions the pokemon statlines follow. I want to also see if there are any significant groups within the population, or are the statistics assignes semi-randomnly.  
 
 # Data preparation
 ## Libraries
@@ -38,7 +44,7 @@ cYellow = '#FADA5E'
 cBlue = '#378CC7'
 ```
 
-## Loading the data from a csv. 
+## Loading the data from a csv
 
 The source is a fantastic [Kaggle](https://www.kaggle.com/abcsds/pokemon) dataset containing the statistick for every pokemon released. 
 
@@ -50,7 +56,7 @@ pokemon <- rename(pokemon, 'Special.Attack' = 'Sp..Atk', 'Special.Defense' = 'Sp
 # Data exploration
 ## First look at the data
 
-```{r, comment=NA, cache = TRUE}
+```{r, comment=NA}
 a <- pokemon %>% filter(pokemon$Name == 'Pikachu')
 kable(a)
 dim(pokemon)
@@ -64,11 +70,11 @@ knitr::include_graphics("assets/pikachu.png")
 
 <center>*Pikachu, the most iconic pokemon. Introduced in the 1st generation. Source: bulbapedia.bulbagarden.net*</center>   
 
-```{r, comment=NA, cache = TRUE}
+```{r, comment=NA}
 str(pokemon)
 ```
 
-```{r, cache = TRUE}
+```{r}
 a <- summary(pokemon)[,c(1:4,12,13)]
 b <- summary(pokemon)[,c(5:11)]
 kable(a)
@@ -83,7 +89,7 @@ Aside from these basic stats, each pokemon has it's *moves*, *abilities* and oth
 
 ## Subsetting the dataset 
 
-```{r, cache = TRUE}
+```{r}
 # All stats
 poke <- pokemon[, c(5:11)]
 
@@ -106,7 +112,7 @@ Third choise it again all pokemon, but withous the Total statistic, since it is 
 ## Visual analisys   
 We can take a look at the overall distirbutions by plotting the scatter plots for all variables. 
 
-```{r, OverallPlot, cache = TRUE, fig.width=8, fig.height=8}
+```{r, OverallPlot, fig.width=8, fig.height=8}
 plot(poke, col = cBlue, pch = 19)
 ```
 
@@ -115,25 +121,25 @@ Some outliers can be seen, but they aren't very strong.
 
 Now, we can take a closer look at the distributions of some of the variables. 
 
-```{r, cache = TRUE}
+```{r}
 ggplot(pokemon) + geom_bar(aes(x = Generation), fill = cYellow)
 ```
 
 The number of pokemon per generation seems to follow a "tick-tok" distribution - each even generation has a significanly lower number of new pokemon. 
 
-```{r, cache = TRUE}
+```{r}
 ggplot(pokemon) + geom_bar(aes(x = Legendary), fill = cYellow)
 ```
 
 There is a large difference beetwen the number of legendary pokemon (65) and normal ones (735)
 
-```{r, cache = TRUE}
+```{r}
 ggplot(pokemon) + geom_bar(aes(x = Type.1), fill = cBlue)
 ```
 
 The number of pokemon in each cattegory in not distibutet evenly. There are a lot more of the *water*, *normal* and *bug* types of pokemons. These might be a design decision, since a lot of the time in-game take place in forrests and simmilar locations. Also notable is the *flying* type - almost no pokemon has it as it's first type. 
 
-```{r, cache = TRUE}
+```{r}
 ggplot(pokemon) + geom_bar(aes(x = Type.2), fill = cBlue)
 ```
 
@@ -141,25 +147,25 @@ Most pokemon don't have a second type - but when they do, it's typically *flying
 
 We can take a look how is the Total variable distributed. It gives a good estimation on how powerful a certain pokemon can be. 
 
-```{r, cache = TRUE}
+```{r}
 ggplot(pokemon) + geom_density(aes(x = Total), fill = cYellow, colour = cYellow) 
 ```
 
 The distribution has two strong peaks - one at around 300, and the other at 500. These is because pokemon has a machanism of *evolution*. Many pokemon (but not all) have at least two forms. One that is weaker (e.g. a bug) and can be encountered earlier in the game, and second (e.g. a butterfly) that is a result of a *evolution* that a pokemon undergoes when it reaches a certain level of expirience. To give a sense of progress, the evolved formes are typically much stronger. 
 
-```{r, cache = TRUE}
+```{r}
 ggplot(pokemon) + geom_density(aes(x = Total), fill = cBlue, colour = cBlue) + facet_grid(Legendary ~ .)
 ```
 
 When comparing the Total beetwen Legendary and non-legendary pokemon, it is claer that most high spots are occupied by the legendary pokemon. They do seem to also follow ths interesting two-peak distribution, even though almost none of the evolve. 
 
-```{r, cache = TRUE}
+```{r}
 ggplot(pokemon) + geom_density(aes(x = Total), fill = cYellow, colour = cYellow) + facet_grid(Generation ~ .)
 ```
 
 We can now see, if there exist any "Power Creep" in pokemon. "Power creep" is a idea, that each new version on generation is stronger than the previous one, typically to help sell new editions. This is a significant problem in many card games. When comparing the Total beetwen generations the "power creep" seems to be nonexitant. It has to be noted that the tow-peak distribution seems to be getting stronger with each generation. 
 
-```{r, cache = TRUE}
+```{r}
 ggplot(pokemon) + geom_density(aes(x = Total), fill = cBlue, colour = cBlue) + facet_grid(Generation ~ Legendary)
 ```
 
@@ -167,7 +173,7 @@ Comparing Total over generations and legendary vs non-legendary pokemon doesn't 
 
 We can take a look how are the other variables distributed. 
 
-```{r, cache = TRUE, fig.width=8, fig.height=8}
+```{r, fig.width=8, fig.height=8}
 p1 <- ggplot(pokemon) + geom_density(aes(x = HP), fill = cYellow, colour = cYellow)
 p2 <- ggplot(pokemon) + geom_density(aes(x = Attack), fill = cYellow, colour = cYellow)
 p3 <- ggplot(pokemon) + geom_density(aes(x = Defense), fill = cYellow, colour = cYellow)
@@ -183,7 +189,7 @@ All of them follow a roughly normal distribution, with means around 55. Some out
 
 To see how the variables interact with each other, we can compute and display the correlation matrix. 
 
-```{r, correlationPlot, cache = TRUE}
+```{r, correlationPlot}
 pokemonCorrelation <- cor(pokemon[, c(6:11)], method="pearson") 
 print(pokemonCorrelation, digits=2)
 corrplot(pokemonCorrelation, order ="alphabet", method = 'number')
@@ -199,7 +205,7 @@ After exploring the dataset, we can move to multidimensional scaling. The genera
 
 First, we have to compute the distance matrix for our data subset, then feed it into the cmdscale function from the stats package. As a result we'll be able to reduce the number of variables to 2.
 
-```{r, MDS1, cache = TRUE, fig.width=8, fig.height=8}
+```{r, MDS1, fig.width=8, fig.height=8}
 poke.dist<-dist(poke) 
 a <- as.matrix(poke.dist)[1:10, 1:10]
 kable(a)
@@ -215,7 +221,7 @@ The results look promising - most of the data is located along the x axis, with 
 
 We can try to gain more insights by displaying the names of the pokemon, and comparing the results to a outside source, the pokemon wikipedia.
 
-```{r, cache = TRUE, fig.width=8, fig.height=8}
+```{r, fig.width=8, fig.height=8}
 plot(poke.mds.1, type = 'n')
 text(poke.mds.1, labels = pokemon$Name, cex=0.5, adj = 0.5)
 ```
@@ -275,7 +281,7 @@ par(mfrow=c(1,1))
 ```
 
 
-```{r, MDS2, cache = TRUE, results='hide', fig.width=8, fig.height=8, echo=FALSE}
+```{r, MDS2, results='hide', fig.width=8, fig.height=8, echo=FALSE}
 poke <- pokemon[, c(5:11)]
 poke.mds.2<-pco(poke.dist, k=2) 
 par(mfrow=c(2,2))
@@ -365,7 +371,7 @@ poke <- pokemon[, c(6:11)]
 ```
 
 
-```{r, MDS2Legendary, cache = TRUE, results='hide', fig.width=8, fig.height=8, echo=FALSE}
+```{r, MDS2Legendary, results='hide', fig.width=8, fig.height=8, echo=FALSE}
 poke <- pokemon %>% filter(Legendary == 'True')
 poke <- poke[, c(5:11)]
 poke.dist<-dist(poke) 
@@ -414,7 +420,7 @@ On the Y axis, it looks like that for Y > 0 HP, Defense and Special Defense incr
 
 We can test this interactions beetwen variables, by performing the MDS on a transposed subset of our dataset. 
 
-```{r, MDS3, cache = TRUE}
+```{r, MDS3}
 poke.dist.t<-dist(t(pokemon[, c(5:11)]))
 poke.mds.3<-cmdscale(poke.dist.t, k=2) 
 a <- summary(poke.mds.3)
@@ -429,7 +435,7 @@ The X axis was taken wholey by the Total variable. On the Y axis, we can see a p
 
 To see the differences better, we can perform the analisys again, this time without the Total varaible. 
 
-```{r, MDS3WithoutTotal, cache = TRUE}
+```{r, MDS3WithoutTotal}
 poke.dist.t.2<-dist(t(pokemon[, c(6:11)])) 
 poke.mds.4<-cmdscale(poke.dist.t.2, k=2) 
 a <- summary(poke.mds.4)
@@ -442,89 +448,113 @@ Removing the total variable gives a better picture - on this graph the left-top 
 
 ## Testing the Goodness of Fit
 
-To
+To test how well the MDS algorith was able to approximate the original dataset, we can compare it to a stress of a MDS algorith run on a random disssimilarity matrix.
 
-```{r, GoodnessOfFit, cache = TRUE}
+```{r, GoodnessOfFit}
 poke <- pokemon[, c(6:11)]
 poke.dist <- dist(t(poke))  
 poke.mds.4 <- mds(poke.dist, ndim=2,  type="ordinal") 
 poke.mds.4
-summary(poke.mds.4)
-plot(poke.mds.4)
 
 stress.random.matrix <- randomstress(n=800, ndim=2, nrep = 1) 
 poke.mds.4$stress/ mean(stress.random.matrix)
 ```
 
-# PCA
+The resulting coefficient is 0.11, which is a fair result. We could improve it by adding the 3rd dimension, but that makes plots much less clear. 
 
-```{r, PCA1, cache = TRUE}
+# Principal Value Decomposition
+## PCA using the singular value decomposition
+
+After the MDS, we can move to a alternative, the PCA. The prcomp function takes care of the centering and scaling the data. 
+
+```{r, PCA1}
 poke <- pokemon[, c(6:11)]
 
-# PCA
 poke.pca.1<-prcomp(poke, center=TRUE, scale.=TRUE) 
-poke.pca.1
-poke.pca.1$rotation
+a <- poke.pca.1$rotation
+kable(a, digits = 2)
+```
+
+The results are simmilar - the PC1 increases with each statistic (the power level). The PC2 is more interesting - It is mostly influenced by the Defense (+), and Speed (-). The Special Attack (-) and Special Defense (-) are also significant, but their effect is about half as strong.
+
+```{r}
 summary(poke.pca.1)
-# Variance plot
 plot(poke.pca.1, type = "l")
+```
+
+Using 2 variables we can explain 63% of the variance. It is quite good, but could be improved. Adding a third dimension increases the ratio to 77%. 
+
+```{r}
+fviz_pca_ind(poke.pca.1, col.ind="cos2", geom = "point", gradient.cols = c(cYellow, cBlue))
+```
+
+Plotting the obseravtons show us that they are quite similar to MDS. 
+
+```{r}
 fviz_pca_var(poke.pca.1, col.var="black")
 ```
 
-# PCA 2
+We can plot the influence of each variable in a nice graph. As previously discussed, the Defense and Speed have the most significant effects.
 
-```{r, PCA2, cache = TRUE}
+## PCA using the eigen
+
+Using the princomp() function we can calculate the PCA using the eigen on the correlation matrix. 
+ 
+```{r, PCA2}
 poke.pca.2<-princomp(poke)
 loadings(poke.pca.2)
+```
+
+As expected, the results are very simmilar. 
+
+```{r}
 plot(poke.pca.2)
 fviz_pca_var(poke.pca.2, col.var="black")
 ```
 
-# Rotated and cut - easy interpretation
+## Rotated PCA
 
-```{r, PCA3, cache = TRUE}
+To have more significant and easier to interpret results, we can use the rotated PCA approach. 
+
+```{r, PCA3}
 poke.pca.3 <- principal(poke, nfactors=3, rotate="varimax")
 poke.pca.3
-summary(poke.pca.3)
-# printing only the significant loadings
 print(loadings(poke.pca.3), digits=2, cutoff=0.4, sort=TRUE)
 ```
 
-```{r, cache = TRUE}
-fviz_pca_ind(poke.pca.1, col.ind="cos2", geom = "point", gradient.cols = c(cYellow, cBlue))
-```
-
-```{r, PCA3d}
-# poke.group <- factor(pokemon$Legendary)
-#pca3d(poke.pca.1, group = poke.group, legend="topleft")
-#pca3d(poke.pca.1, group = poke.group, biplot=TRUE, biplot.vars=3, legend="topleft") 
-```
+These results are much more interesting - without the cut-off we can explain 68% of the variance. Cuting the influence at 0.4 lowers the ratio to 52%, but let's us see the results better. It seems that we have a variable for each of our previously discovered groups - RC1 for Defensive pokemon, RC2 for Agressive, and RC3 for Well-rounded.
 
 ```{r}
-#snapshotPCA3d(file="first_plot.png") 
+biplot(poke.pca.3, hist.col = cYellow, smoother = TRUE)
 ```
 
-############## Clustering k-means
+The biplot let's us see the combinations of these 3 variables. 
 
-```{r, OptimalClusters, cache = TRUE}
+# Clustering the results
+## Optimal number of clusters
+
+After performind the dimensionality reduction in MDS and PCA, we can cluster the results in K-means and PAM.  
+First step is to find a sutiable number of clusters. For this we can run the fviz_nbclust() function from the factoextra package.  
+
+```{r, OptimalClusters}
 # Prepare data
 poke.dist<-dist(poke) 
 poke.mds.1 <- cmdscale(poke.dist, k=2) 
 poke.mds.1.center <- center_scale(poke.mds.1)
 poke.mds.1.center <- poke.mds.1
 
-# Optimal number of clusters
-c3<-NbClust(poke.mds.1.center , distance="euclidean", min.nc=2, max.nc=10, method="kmeans", index="silhouette")
-c3$All.index
-
 fviz_nbclust(as.data.frame(poke.mds.1), FUNcluster=pam) 
 ```
 
-# From ClusteR
+The optimal number of clusters is 2. But, because we want to see the groups identified earlier, we can settle for 5 clusters, which have a bit lower silhouette. 
 
-```{r, CLuster1, cache = TRUE}
-poke.km <- KMeans_rcpp(poke.mds.1.center, clusters=4, num_init=30, max_iters = 10000) 
-poke.km.pca <- KMeans_rcpp(poke.pca.2$scores[, 1:2], clusters=4, num_init=30, max_iters = 10000) 
+## K-means in ClusteR
+
+We can now proceed to clustering using K-means. We'll use the KMenas_rcpp() function from ClusteR library. We'll run this algorithm on the data form MDS and PCA.
+
+```{r, CLuster1}
+poke.km <- KMeans_rcpp(poke.mds.1.center, clusters=5, num_init=30, max_iters = 10000) 
+poke.km.pca <- KMeans_rcpp(poke.pca.2$scores[, 1:2], clusters=5, num_init=30, max_iters = 10000) 
 
 x1 <- ggplot(as.data.frame(poke.mds.1.center)) + geom_point(aes(x = V1, y = V2, colour = poke.km$clusters)) + scale_colour_gradientn(colours=wes_palette(n=3, name="BottleRocket2"), guide = FALSE)
 x2 <- ggplot(as.data.frame(poke.pca.2$scores[, 1:2])) + geom_point(aes(x = Comp.1, y = Comp.2, colour = poke.km.pca$clusters)) + scale_colour_gradientn(colours=wes_palette(n=3, name="BottleRocket2"), guide = FALSE)
@@ -534,43 +564,59 @@ x2 <- ggplot(as.data.frame(poke.pca.2$scores[, 1:2])) + geom_point(aes(x = Comp.
 grid.arrange(x1, x2, nrow=2)
 ```
 
+The data was nicely clustered into 5 groups: 'weak', 'average', 'aggresive', 'defensive' and 'legendary' pokemon. The results from MDS and PCA are virtually identical, only the Y axis is reversed. 
 
-# From Factoextra
+## K-means in Factoextra
 
-```{r, cache = TRUE, results='hide', eval = FALSE}
-poke.km.2 <- eclust(as.data.frame(poke.mds.1), "kmeans", k = 4)
-poke.km.2.pca <- eclust(as.data.frame(poke.pca.2$scores[, 1:2]), "kmeans", k = 4)
+To display the sihouette plot, we can do the clustering using eclust().
 
-fviz_silhouette(poke.km.2)
-fviz_silhouette(poke.km.2.pca)
-```
-
-```{r, Cluster2, cache = TRUE, results='hide', echo = FALSE}
-poke.km.2 <- eclust(as.data.frame(poke.mds.1), "kmeans", k = 4)
-poke.km.2.pca <- eclust(as.data.frame(poke.pca.2$scores[, 1:2]), "kmeans", k = 4)
+```{r, results='hide', eval = FALSE}
+poke.km.2 <- eclust(as.data.frame(poke.mds.1), "kmeans", k = 5)
+poke.km.2.pca <- eclust(as.data.frame(poke.pca.2$scores[, 1:2]), "kmeans", k = 5)
 
 fviz_silhouette(poke.km.2)
 fviz_silhouette(poke.km.2.pca)
 ```
 
-# PAM
+```{r, Cluster2, results='hide', echo = FALSE, fig.width=6, fig.height=3}
+poke.km.2 <- eclust(as.data.frame(poke.mds.1), "kmeans", k = 5)
+poke.km.2.pca <- eclust(as.data.frame(poke.pca.2$scores[, 1:2]), "kmeans", k = 5)
+
+fviz_silhouette(poke.km.2)
+fviz_silhouette(poke.km.2.pca)
+```
+
+Almost all points have a positive silhouette, but the overall average silhouette is only decent. This is because the differences between points are quite small.  
+
+## PAM
+
+Aditionally, we can run the PAM algorithm on the MDS and PCA points. Since this is a small dataset, the results are very simillar to K-means. 
 
 ```{r, CLuster3cache = TRUE, results='hide', eval = FALSE}
-poke.pam <- eclust(as.data.frame(poke.mds.1), "pam", k = 4)
-poke.pam.2 <- eclust(as.data.frame(poke.pca.2$scores[, 1:2]), "pam", k = 4)
+poke.pam <- eclust(as.data.frame(poke.mds.1), "pam", k = 5)
+poke.pam.2 <- eclust(as.data.frame(poke.pca.2$scores[, 1:2]), "pam", k = 5)
 fviz_silhouette(poke.pam)
 fviz_silhouette(poke.pam.2)
 ```
 
-```{r, CLuster3cache = TRUE, results='hide', echo = FALSE}
-poke.pam <- eclust(as.data.frame(poke.mds.1), "pam", k = 4)
-poke.pam.2 <- eclust(as.data.frame(poke.pca.2$scores[, 1:2]), "pam", k = 4)
+```{r, CLuster3cache = TRUE, results='hide', echo = FALSE, fig.width=6, fig.height=3}
+poke.pam <- eclust(as.data.frame(poke.mds.1), "pam", k = 5)
+poke.pam.2 <- eclust(as.data.frame(poke.pca.2$scores[, 1:2]), "pam", k = 5)
 fviz_silhouette(poke.pam)
 fviz_silhouette(poke.pam.2)
 ```
 
 
+# Conclusions 
+ 
+After this analisys I can conclude, that there are rules governing the assigment of statisics to different pokemon.  
 
+Visual analisys of the population showed that there is a strong two-peak distribution in the Total statistic, corresponding to pre and post evolution pokemon. It was shown, that the highest values are acheived by the small subset of all pokemon, the legendary pokemon. The analisys shown no signs of *"power creep"* between generations and showed that all statistics other than Total follow a normal distribution aroun 55.   
 
+Multidimensional scaling analisys was able to correctly identify significant outliers, that were then confirmed with a outside source.  
+
+MDS analisys, later confirmed by PCA, showed that the more powerful pokemon fall into 3 different categories - **Agresive** (high Speed and Special Attack), **Defenisive** (high Defense and Special Defense) and **Well-rounded** (high HP and Attack). 
+
+The K-means and PAM analisys showed that the dataset can be divided into 5 groups - **‘weak’**, **‘medium - average’**, **‘medium - aggresive’**, **‘medium - defensive’** and **‘legendary’** pokemon. 
 
 
